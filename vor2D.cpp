@@ -23,7 +23,8 @@ arma::rowvec vor2D (double G, double x, double z, double xj, double zj) {
 List lumpVortex (arma::vec xc, arma::vec zc,
                  arma::vec x, arma::vec z,
                  arma::vec nx, arma::vec nz,
-                 float Q, float alpha) {
+                 double Q, double alpha,
+                 double rho, double c) {
   
   // Initialize output and intermediate matricies
   int matDim = x.n_elem;
@@ -55,16 +56,29 @@ List lumpVortex (arma::vec xc, arma::vec zc,
     }
   }
   
+  // Solve the system
+  G = solve(a, RHS);
+  
+  // Secondary computations
+  arma::colvec delL = rho * Q * G;
+  double L = accu(delL);
+  double cL = L / (0.5 * rho * pow(Q, 2) * c);
+  
   // Prepare the output
   List ret;
   ret["a"] = a;
   ret["RHS"] = RHS;
-  ret["G"] = solve(a, RHS); // Solve for the vortex strengths
+  ret["G"] = G;
+  ret["delL"] = delL;
+  ret["L"] = L;
+  ret["cL"] = cL;
   return(ret);
 }
 
 // [[Rcpp::export]]
-arma::mat vor2DV (double G, arma::vec x, arma::vec z, arma::vec xj, arma::vec zj) {
+arma::mat vor2DV (double G, arma::vec x,
+                  arma::vec z, arma::vec xj,
+                  arma::vec zj) {
   
   arma::vec xmxj = x - xj;
   arma::vec zmzj = z - zj;
